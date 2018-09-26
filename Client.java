@@ -81,7 +81,7 @@ class TCPClient{
     InetAddress loc;
     Socket socket;
     public void sendString(Integer r_port) throws IOException {
-        loc = InetAddress.getLocalHost();
+        loc = Client.host;
         socket = new Socket(loc, r_port);
         DataInputStream dis = new DataInputStream(
                 new BufferedInputStream(socket.getInputStream()));
