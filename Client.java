@@ -1,25 +1,28 @@
 import java.io.*;
-import java.math.BigInteger;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.Scanner;
+import java.net.*;
+
 
 public class Client {
     static Integer n_port;
     static Integer req;
     static InetAddress host;
+    static String msg;
     public static void main(String[] args) throws IOException{
-        //用来接收参数的~~~~
+        // four inputs
         host = InetAddress.getByName(args[0]);
         n_port = Integer.parseInt(args[1]);
         req = Integer.parseInt(args[2]);
+        msg = args[3];
         UDPClient UdpClient = new UDPClient();
+
+        // get the available port returned by the server
         Integer r_port = UdpClient.init(n_port,req);
+        // close the connection with n_port
         UdpClient.shutdown();
+
+        // open up an TCP connection with r_port and send string to server
         TCPClient TcpClient = new TCPClient();
-        TcpClient.sendString(r_port);
+        TcpClient.sendString(r_port, msg);
     }
 }
 
@@ -32,9 +35,11 @@ class UDPClient{
     Boolean confirmation = false;
     public int init(Integer n_port, Integer req) throws IOException {
         byte[] buf = new byte[1024];
-        ds = new DatagramSocket(req);
+        System.out.println("I came here");
+        ds = new DatagramSocket(getAvailablePort());
+        System.out.println("I dont come here");
         dp_receive = new DatagramPacket(buf, 1024);
-        String str_send = "13";
+        String str_send = req.toString();
         DatagramPacket dp_send= new DatagramPacket(str_send.getBytes(), str_send.length(), Client.host, n_port);
         while(!receiveResponse){
             ds.send(dp_send);
@@ -55,7 +60,6 @@ class UDPClient{
                 " from " + dp_receive.getAddress().getHostAddress() + ":" + dp_receive.getPort();
         System.out.println(str);
         if (str_receive.equals("OK")){
-        //第一次收到portnum
             System.out.println("Port number has already been confirmed");
             confirmation = true;
         }
@@ -72,49 +76,34 @@ class UDPClient{
         ds.send(dp_send);
     }
 
+    public int getAvailablePort() throws IOException{
+        ServerSocket serverSocket =  new ServerSocket(0); //读取空闲的可用端口
+        int port = serverSocket.getLocalPort();
+        r_port = port;
+        serverSocket.close();
+        return r_port;
+    }
+
     public void shutdown(){
         ds.close();
     }
 }
 
-class TCPClient{
+class TCPClient {
     InetAddress loc;
     Socket socket;
-    public void sendString(Integer r_port) throws IOException {
+
+    public void sendString(Integer r_port, String str ) throws IOException {
         loc = Client.host;
         socket = new Socket(loc, r_port);
         DataInputStream dis = new DataInputStream(
                 new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(
                 new BufferedOutputStream(socket.getOutputStream()));
-        Scanner sc = new Scanner(System.in);
-
-        boolean flag = false;
-
-        while (!flag) {
-
-            System.out.println("Please type in the string:");
-            String str = sc.nextLine();
-            dos.writeUTF(str);
-            dos.flush();
-            String rev = dis.readUTF();
-            System.out.println("CLIENT_RCV_MSG="+rev);
-            while (true) {
-                System.out.println("Again?(Y/N)");
-
-                String judge = sc.nextLine();
-                if (judge.equalsIgnoreCase("N")) {
-                    dos.writeInt(0);
-                    dos.flush();
-                    flag = true;
-                    break;
-                } else if (judge.equalsIgnoreCase("Y")) {
-                    dos.writeInt(1);
-                    dos.flush();
-                    break;
-                }
-            }
-        }
+        dos.writeUTF(str);
+        dos.flush();
+        String rev = dis.readUTF();
+        System.out.println("CLIENT_RCV_MSG=" + rev);
         socket.close();
     }
 }

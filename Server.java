@@ -10,8 +10,8 @@ public class Server {
     static int req_code;
     public static void main(String[] args) throws IOException {
         req_code = Integer.parseInt(args[0]);
-        int n_port = 3000;
         UDPServer UDPs = new UDPServer();
+        int n_port = UDPs.getAvailablePort();
         UDPs.init(n_port);
         System.out.println("SERVER_PORT="+ n_port);
         while(!conneted){
@@ -36,10 +36,14 @@ class UDPServer{
 
     public void receive() throws IOException{
         ds.receive(dp_receive);
+        System.out.println("I came here");
         String str_receive = new String(dp_receive.getData(),0,dp_receive.getLength());
         Integer order = Integer.parseInt(str_receive);
         if(order.equals(Server.req_code)){
-            sentPort(getAvailableTcpPort(),dp_receive);
+            Integer port = getAvailablePort();
+            System.out.println("SERVER_TCP_PORT="+ port.toString());
+            System.out.println();
+            sentPort(port,dp_receive);
         }
         else{
             if (!confirmation) {
@@ -48,18 +52,12 @@ class UDPServer{
         }
     }
 
-    public int getAvailableTcpPort(){
-        for(int i=10000;i<=65535;i++) {
-            try {
-                new ServerSocket(i).close();
-                r_port = i;
-                System.out.println("SERVER_TCP_PORT="+r_port);
-                return i;
-            } catch (IOException e) {
-                continue;
-            }
-        }
-        return -1;
+    public int getAvailablePort() throws IOException{
+        ServerSocket serverSocket =  new ServerSocket(0); //读取空闲的可用端口
+        int port = serverSocket.getLocalPort();
+        r_port = port;
+        serverSocket.close();
+        return r_port;
     }
 
     public void sentPort(Integer port, DatagramPacket dp_receive) throws IOException{
@@ -93,15 +91,12 @@ class TCPServer {
                 new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(
                 new BufferedOutputStream(socket.getOutputStream()));
-        do {
-            String str = dis.readUTF();
-            String mes = "SERVER_RCV_MSG="+str;
-            System.out.println(mes);
-            String reverse = reverseString(str);
-            dos.writeUTF(reverse);
-            dos.flush();
-        }
-        while (dis.readInt() != 0);
+        String str = dis.readUTF();
+        String mes = "SERVER_RCV_MSG="+str;
+        System.out.println(mes);
+        String reverse = reverseString(str);
+        dos.writeUTF(reverse);
+        dos.flush();
         socket.close();
         serverSocket.close();
     }
