@@ -35,7 +35,6 @@ class UDPClient{
     Boolean confirmation = false;
     public int init(Integer n_port, Integer req) throws IOException {
         byte[] buf = new byte[1024];
-        System.out.println("I came here");
         ds = new DatagramSocket(getAvailablePort());
 
         dp_receive = new DatagramPacket(buf, 1024);
@@ -77,7 +76,7 @@ class UDPClient{
     }
 
     public int getAvailablePort() throws IOException{
-        ServerSocket serverSocket =  new ServerSocket(0); //读取空闲的可用端口
+        ServerSocket serverSocket =  new ServerSocket(0);
         int port = serverSocket.getLocalPort();
         r_port = port;
         serverSocket.close();

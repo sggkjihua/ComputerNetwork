@@ -57,7 +57,7 @@ class UDPServer{
     }
 
     public int getAvailablePort() throws IOException{
-        ServerSocket serverSocket =  new ServerSocket(0); //读取空闲的可用端口
+        ServerSocket serverSocket =  new ServerSocket(0);
         int port = serverSocket.getLocalPort();
         serverSocket.close();
         r_port = port;
