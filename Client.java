@@ -18,7 +18,7 @@ public class Client {
         // get the available port returned by the server
         Integer r_port = UdpClient.init(n_port,req);
         // close the connection with n_port
-        UdpClient.shutdown();
+        UdpClient.close();
 
         // open up an TCP connection with r_port and send string to server
         TCPClient TcpClient = new TCPClient();
@@ -37,7 +37,7 @@ class UDPClient{
         byte[] buf = new byte[1024];
         System.out.println("I came here");
         ds = new DatagramSocket(getAvailablePort());
-        System.out.println("I dont come here");
+
         dp_receive = new DatagramPacket(buf, 1024);
         String str_send = req.toString();
         DatagramPacket dp_send= new DatagramPacket(str_send.getBytes(), str_send.length(), Client.host, n_port);
@@ -84,7 +84,7 @@ class UDPClient{
         return r_port;
     }
 
-    public void shutdown(){
+    public void close(){
         ds.close();
     }
 }

@@ -5,20 +5,28 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
-    static Boolean conneted = false;
-    static int re_port;
+    static int tcp_port;
     static int req_code;
+    static int n_port;
+    static UDPServer UDPserver;
+    static TCPServer TcpServer;
+
     public static void main(String[] args) throws IOException {
         req_code = Integer.parseInt(args[0]);
-        UDPServer UDPs = new UDPServer();
-        int n_port = UDPs.getAvailablePort();
-        UDPs.init(n_port);
+
+        UDPserver = new UDPServer();
+        n_port = UDPserver.getAvailablePort();
         System.out.println("SERVER_PORT="+ n_port);
-        while(!conneted){
-            UDPs.receive();
+
+        while (true){
+            UDPserver.init(n_port);
+            while(!UDPserver.conneted){
+                UDPserver.receive();
+            }
+            UDPserver.conneted = false;
+            TcpServer = new TCPServer();
+            TcpServer.receiveString(tcp_port);
         }
-        TCPServer TcpServer = new TCPServer();
-        TcpServer.receiveString(re_port);
     }
 }
 
@@ -27,7 +35,7 @@ class UDPServer{
     DatagramSocket ds;
     DatagramPacket dp_receive;
     DatagramPacket dp_send;
-    Boolean confirmation = false;
+    Boolean conneted = false;
     public void init(Integer n_port) throws IOException{
         byte[] buf = new byte[1024];
         ds = new DatagramSocket(n_port);
@@ -36,28 +44,24 @@ class UDPServer{
 
     public void receive() throws IOException{
         ds.receive(dp_receive);
-        System.out.println("I came here");
         String str_receive = new String(dp_receive.getData(),0,dp_receive.getLength());
         Integer order = Integer.parseInt(str_receive);
         if(order.equals(Server.req_code)){
             Integer port = getAvailablePort();
             System.out.println("SERVER_TCP_PORT="+ port.toString());
-            System.out.println();
             sentPort(port,dp_receive);
         }
         else{
-            if (!confirmation) {
-                acknowledge(order, dp_receive);
-            }
+            acknowledge(order, dp_receive);
         }
     }
 
     public int getAvailablePort() throws IOException{
         ServerSocket serverSocket =  new ServerSocket(0); //读取空闲的可用端口
         int port = serverSocket.getLocalPort();
-        r_port = port;
         serverSocket.close();
-        return r_port;
+        r_port = port;
+        return port;
     }
 
     public void sentPort(Integer port, DatagramPacket dp_receive) throws IOException{
@@ -72,13 +76,14 @@ class UDPServer{
             String acknowledgement = "OK";
             dp_send = new DatagramPacket(acknowledgement.getBytes(), acknowledgement.length(), dp_receive.getAddress(), dp_receive.getPort());
             ds.send(dp_send);
+            Server.tcp_port = r_port;
+            conneted = true;
             ds.close();
-            Server.re_port = r_port;
-            Server.conneted = true;
         }else{
             String acknowledgement = "NO";
             dp_send = new DatagramPacket(acknowledgement.getBytes(), acknowledgement.length(), dp_receive.getAddress(), dp_receive.getPort());
             ds.send(dp_send);
+            ds.close();
         }
     }
 }
